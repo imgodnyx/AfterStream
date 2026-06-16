@@ -1,15 +1,15 @@
-import { Helmet } from "react-helmet-async";
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 
+import { useSearchQuery } from "@/hooks/useSearchQuery";
 import { useOverlayStack } from "@/stores/interface/overlayStack";
 
 import { DiscoverLayout } from "../layouts/DiscoverLayout";
 import { FeaturedCarousel } from "./components/FeaturedCarousel";
 import type { FeaturedMedia } from "./components/FeaturedCarousel";
 import DiscoverContent from "./discoverContent";
-import { PageTitle } from "../parts/util/PageTitle";
 import { HeroPart } from "../parts/home/HeroPart";
-import { useSearchQuery } from "@/hooks/useSearchQuery";
+import { PageTitle } from "../parts/util/PageTitle";
 
 export function Discover() {
   const { showModal } = useOverlayStack();

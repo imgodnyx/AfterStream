@@ -351,10 +351,10 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
       ...src.preferredHeaders,
       ...src.headers,
     };
-    const mp4Url = !isUrlAlreadyProxied(src.url) &&
-      Object.keys(mp4Headers).length > 0
-      ? createMP4ProxyUrl(src.url, mp4Headers)
-      : src.url;
+    const mp4Url =
+      !isUrlAlreadyProxied(src.url) && Object.keys(mp4Headers).length > 0
+        ? createMP4ProxyUrl(src.url, mp4Headers)
+        : src.url;
 
     vid.src = processCdnLink(mp4Url);
     vid.currentTime = startAt;
@@ -386,10 +386,7 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
     if (buffered.length === 0) return false;
 
     for (let i = 0; i < buffered.length; i += 1) {
-      if (
-        currentTime >= buffered.start(i) &&
-        currentTime <= buffered.end(i)
-      ) {
+      if (currentTime >= buffered.start(i) && currentTime <= buffered.end(i)) {
         const bufferedAhead = buffered.end(i) - currentTime;
         return bufferedAhead >= 5; // At least 5 seconds buffered ahead
       }

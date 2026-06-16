@@ -19,12 +19,11 @@ export function DiscoverNavigation({
             <button
               key={category}
               type="button"
-              className={
-                "rounded-full px-4 py-2 text-sm md:text-base font-semibold transition duration-200 focus:outline-none focus:ring-2 focus:ring-type-link/50 " +
-                (selectedCategory === category
+              className={`rounded-full px-4 py-2 text-sm md:text-base font-semibold transition duration-200 focus:outline-none focus:ring-2 focus:ring-type-link/50 ${
+                selectedCategory === category
                   ? "bg-type-link text-white shadow-lg shadow-type-link/20"
-                  : "bg-background-surface text-type-secondary hover:bg-background-accentA")
-              }
+                  : "bg-background-surface text-type-secondary hover:bg-background-accentA"
+              }`}
               onClick={() => onCategoryChange(category)}
             >
               {t(`discover.tabs.${category}`)}

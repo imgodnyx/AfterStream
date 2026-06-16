@@ -1,4 +1,7 @@
-import { getLoadbalancedM3U8ProxyUrl, getLoadbalancedProxyUrl } from "@/backend/providers/fetchers";
+import {
+  getLoadbalancedM3U8ProxyUrl,
+  getLoadbalancedProxyUrl,
+} from "@/backend/providers/fetchers";
 import { getM3U8ProxyUrls } from "@/utils/proxyUrls";
 
 /**
