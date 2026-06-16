@@ -178,8 +178,15 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
   function setupSource(vid: HTMLVideoElement, src: LoadableSource) {
     hls = null;
     if (src.type === "hls") {
+      const proxyUrl = !isUrlAlreadyProxied(src.url)
+        ? createM3U8ProxyUrl(src.url, {
+            ...src.preferredHeaders,
+            ...src.headers,
+          })
+        : src.url;
+
       if (canPlayHlsNatively(vid)) {
-        vid.src = processCdnLink(src.url);
+        vid.src = processCdnLink(proxyUrl);
         vid.currentTime = startAt;
         return;
       }
@@ -335,12 +342,21 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
       }
 
       hls.attachMedia(vid);
-      hls.loadSource(processCdnLink(src.url));
+      hls.loadSource(processCdnLink(proxyUrl));
       vid.currentTime = startAt;
       return;
     }
 
-    vid.src = processCdnLink(src.url);
+    const mp4Headers = {
+      ...src.preferredHeaders,
+      ...src.headers,
+    };
+    const mp4Url = !isUrlAlreadyProxied(src.url) &&
+      Object.keys(mp4Headers).length > 0
+      ? createMP4ProxyUrl(src.url, mp4Headers)
+      : src.url;
+
+    vid.src = processCdnLink(mp4Url);
     vid.currentTime = startAt;
   }
 
@@ -363,6 +379,24 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
     }
   }
 
+  function checkHasEnoughBuffer(): boolean {
+    if (!videoElement) return false;
+    const currentTime = videoElement.currentTime ?? 0;
+    const buffered = videoElement.buffered;
+    if (buffered.length === 0) return false;
+
+    for (let i = 0; i < buffered.length; i += 1) {
+      if (
+        currentTime >= buffered.start(i) &&
+        currentTime <= buffered.end(i)
+      ) {
+        const bufferedAhead = buffered.end(i) - currentTime;
+        return bufferedAhead >= 5; // At least 5 seconds buffered ahead
+      }
+    }
+    return false;
+  }
+
   function setSource() {
     if (!videoElement || !source) return;
     setupSource(videoElement, source);
@@ -383,33 +417,15 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
     videoElement.addEventListener("playing", () => emit("play", undefined));
     videoElement.addEventListener("pause", () => emit("pause", undefined));
     videoElement.addEventListener("canplay", () => {
-      // Check if video has enough buffered data to play smoothly (at least 5 seconds ahead)
-      const hasEnoughBuffer = (() => {
-        if (!videoElement) return false;
-        const currentTime = videoElement.currentTime ?? 0;
-        const buffered = videoElement.buffered;
-        if (buffered.length === 0) return false;
-
-        // Find the buffered range that contains current time
-        for (let i = 0; i < buffered.length; i += 1) {
-          if (
-            currentTime >= buffered.start(i) &&
-            currentTime <= buffered.end(i)
-          ) {
-            const bufferedAhead = buffered.end(i) - currentTime;
-            return bufferedAhead >= 5; // At least 5 seconds buffered ahead
-          }
-        }
-        return false;
-      })();
+      const hasEnoughBuffer = checkHasEnoughBuffer();
 
       // Only set loading to false if we have enough buffer or if we're not at the start
       if (hasEnoughBuffer || (videoElement?.currentTime ?? 0) > 0) {
         emit("loading", false);
       }
 
-      // Attempt autoplay if this was an autoplay transition (startAt = 0)
-      if (shouldAutoplayAfterLoad && startAt === 0 && videoElement) {
+      // Attempt autoplay if this load was intended to autoplay
+      if (shouldAutoplayAfterLoad && videoElement) {
         shouldAutoplayAfterLoad = false; // Reset the flag
         // Try to play - this will work on most platforms, but iOS may block it
         const playPromise = videoElement.play();
@@ -475,23 +491,7 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
         emit("buffered", bufferedTime);
 
         // Check if we now have enough buffer to stop loading
-        const hasEnoughBuffer = (() => {
-          const buffered = videoElement.buffered;
-          if (buffered.length === 0) return false;
-
-          const currentTime = videoElement.currentTime ?? 0;
-          // Find the buffered range that contains current time
-          for (let i = 0; i < buffered.length; i += 1) {
-            if (
-              currentTime >= buffered.start(i) &&
-              currentTime <= buffered.end(i)
-            ) {
-              const bufferedAhead = buffered.end(i) - currentTime;
-              return bufferedAhead >= 5; // At least 5 seconds buffered ahead
-            }
-          }
-          return false;
-        })();
+        const hasEnoughBuffer = checkHasEnoughBuffer();
 
         // If we're still loading but now have enough buffer, stop loading
         // This handles cases where canplay fired with insufficient buffer
@@ -558,11 +558,6 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
     unloadSource();
     if (videoElement) {
       videoElement = null;
-    }
-    // Clear any remaining timeout
-    if (qualityChangeTimeout) {
-      clearTimeout(qualityChangeTimeout);
-      qualityChangeTimeout = null;
     }
   }
 
@@ -637,8 +632,7 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
       source = ops.source;
       emit("loading", true);
       startAt = ops.startAt;
-      // Set autoplay flag if starting from beginning (indicates autoplay transition)
-      shouldAutoplayAfterLoad = ops.startAt === 0;
+      shouldAutoplayAfterLoad = Boolean(ops.autoplay);
       setSource();
     },
     changeQuality(newAutomaticQuality, newPreferredQuality) {
@@ -790,10 +784,10 @@ export function makeVideoElementDisplayInterface(): DisplayInterface {
         const hasHeaders = Object.keys(allHeaders).length > 0;
 
         // Don't create proxy URL if it's already using the proxy
-        if (!isUrlAlreadyProxied(source.url) && hasHeaders) {
+        if (!isUrlAlreadyProxied(source.url)) {
           proxiedUrl = createM3U8ProxyUrl(source.url, allHeaders);
         } else {
-          proxiedUrl = source.url; // Already proxied or no headers needed
+          proxiedUrl = source.url; // Already proxied
         }
       } else if (source?.type === "mp4") {
         const allHeaders = {

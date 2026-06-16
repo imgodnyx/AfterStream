@@ -1,4 +1,4 @@
-import { getLoadbalancedM3U8ProxyUrl } from "@/backend/providers/fetchers";
+import { getLoadbalancedM3U8ProxyUrl, getLoadbalancedProxyUrl } from "@/backend/providers/fetchers";
 import { getM3U8ProxyUrls } from "@/utils/proxyUrls";
 
 /**
@@ -21,11 +21,12 @@ export function createM3U8ProxyUrl(
 
   const encodedUrl = encodeURIComponent(url);
   const encodedHeaders = encodeURIComponent(JSON.stringify(headers));
-  return `${proxyBaseUrl}/m3u8-proxy?url=${encodedUrl}${headers ? `&headers=${encodedHeaders}` : ""}`;
+  const hasHeaders = Object.keys(headers).length > 0;
+  return `${proxyBaseUrl}/m3u8-proxy?url=${encodedUrl}${hasHeaders ? `&headers=${encodedHeaders}` : ""}`;
 }
 
 /**
- * TODO: Creates a proxied MP4 URL for MP4 streams
+ * Creates a proxied MP4 URL for MP4 streams
  * @param url - The original MP4 URL to proxy
  * @param headers - Headers to include with the request
  * @returns The proxied MP4 URL
@@ -34,11 +35,14 @@ export function createMP4ProxyUrl(
   url: string,
   _headers: Record<string, string> = {},
 ): string {
-  // TODO: Implement MP4 proxy for protected streams
-  // This would need a separate MP4 proxy service that can handle headers
-  // For now, return the original URL
-  console.warn("MP4 proxy not yet implemented - using original URL");
-  return url;
+  const proxyBaseUrl = getLoadbalancedProxyUrl();
+
+  if (!proxyBaseUrl) {
+    console.warn("No general proxy URLs available in configuration");
+    return url; // Fallback to original URL
+  }
+
+  return `${proxyBaseUrl}/?destination=${encodeURIComponent(url)}`;
 }
 
 /**

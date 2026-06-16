@@ -24,7 +24,7 @@ export function useSearchQuery(): [
     const current = decode(params.query);
     if (inp === current) return;
     if (inp.length === 0) {
-      navigate("/", { replace: true });
+      navigate("/browse", { replace: true });
       return;
     }
     navigate(

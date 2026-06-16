@@ -301,6 +301,7 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
       startAt,
       automaticQuality: qualityPreferences.quality.automaticQuality,
       preferredQuality: qualityPreferences.quality.lastChosenQuality,
+      autoplay: true,
     });
   },
   switchQuality(quality) {
@@ -319,6 +320,7 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
         startAt: store.progress.time,
         automaticQuality: false,
         preferredQuality: quality,
+        autoplay: true,
       });
     } else if (store.source.type === "hls") {
       store.display?.changeQuality(false, quality);

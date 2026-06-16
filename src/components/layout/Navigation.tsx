@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import { useEffect, useState } from "react";
-import { Link, To, useNavigate } from "react-router-dom";
+import { Link, To, useLocation, useNavigate } from "react-router-dom";
 
 import { NoUserAvatar, UserAvatar } from "@/components/Avatar";
 import { IconPatch } from "@/components/buttons/IconPatch";
@@ -27,6 +27,7 @@ export function Navigation(props: NavigationProps) {
   const bannerHeight = useBannerSize();
   const navigate = useNavigate();
   const { loggedIn } = useAuth();
+  const location = useLocation();
   const [scrollPosition, setScrollPosition] = useState(0);
   const { openNotifications, getUnreadCount } = useNotifications();
 
@@ -157,33 +158,38 @@ export function Navigation(props: NavigationProps) {
                 />
               </a>
               {!enableLowPerformanceMode &&
-                (window.location.pathname !== "/discover" ? (
-                  <a
-                    onClick={() => handleClick("/discover")}
-                    rel="noreferrer"
-                    className="text-xl text-white tabbable rounded-full backdrop-blur-lg"
-                  >
-                    <IconPatch
-                      icon={Icons.RISING_STAR}
-                      clickable
-                      downsized
-                      navigation
-                    />
-                  </a>
-                ) : (
-                  <a
-                    onClick={() => handleClick("/")}
-                    rel="noreferrer"
-                    className="text-lg text-white tabbable rounded-full backdrop-blur-lg"
-                  >
-                    <IconPatch
-                      icon={Icons.SEARCH}
-                      clickable
-                      downsized
-                      navigation
-                    />
-                  </a>
-                ))}
+                (() => {
+                  const isDiscoverHome =
+                    location.pathname === "/" ||
+                    location.pathname === "/discover";
+                  return isDiscoverHome ? (
+                    <a
+                      onClick={() => handleClick("/browse")}
+                      rel="noreferrer"
+                      className="text-xl text-white tabbable rounded-full backdrop-blur-lg"
+                    >
+                      <IconPatch
+                        icon={Icons.SEARCH}
+                        clickable
+                        downsized
+                        navigation
+                      />
+                    </a>
+                  ) : (
+                    <a
+                      onClick={() => handleClick("/")}
+                      rel="noreferrer"
+                      className="text-xl text-white tabbable rounded-full backdrop-blur-lg"
+                    >
+                      <IconPatch
+                        icon={Icons.RISING_STAR}
+                        clickable
+                        downsized
+                        navigation
+                      />
+                    </a>
+                  );
+                })()}
               <a
                 onClick={() => openNotifications()}
                 rel="noreferrer"

@@ -128,7 +128,7 @@ export function makeChromecastDisplayInterface(
 
     // Handle HLS streams
     if (source.type === "hls") {
-      if (!isUrlAlreadyProxied(source.url) && hasHeaders) {
+      if (!isUrlAlreadyProxied(source.url)) {
         contentUrl = createM3U8ProxyUrl(source.url, allHeaders);
       }
     }
